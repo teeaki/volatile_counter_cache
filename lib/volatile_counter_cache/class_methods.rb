@@ -25,10 +25,20 @@ module VolatileCounterCache
     def volatile_counter_cache(association_name, cache:, cache_options: {}, counter_method_name: nil, foreign_key: nil)
       counter_method_name = counter_method_name || "#{association_name}_count"
       cache_key_prefix = "#{CACHE_KEY_PREFIX}/#{model_name}/#{association_name}"
+      clear_counter_method_name = "clear_#{counter_method_name}"
 
       define_method(counter_method_name) do
         cache.fetch("#{cache_key_prefix}/#{id}", cache_options) do
-          send(association_name).size
+          send(association_name).count
+        end
+      end
+      define_method(clear_counter_method_name) do
+        self.class.send(clear_counter_method_name, id)
+      end
+      class << self; self; end.class_eval do
+        define_method(clear_counter_method_name) do |id|
+          raise('id must be present') unless id
+          cache.delete("#{cache_key_prefix}/#{id}", cache_options)
         end
       end
 
