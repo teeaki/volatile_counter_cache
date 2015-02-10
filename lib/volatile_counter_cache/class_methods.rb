@@ -36,6 +36,9 @@ module VolatileCounterCache
         self.class.send(clear_counter_method_name, id)
       end
       class << self; self; end.class_eval do
+        define_method(counter_method_name) do |id|
+          cache.read("#{cache_key_prefix}/#{id}") || find(id).send(counter_method_name)
+        end
         define_method(clear_counter_method_name) do |id|
           raise('id must be present') unless id
           cache.delete("#{cache_key_prefix}/#{id}", cache_options)
